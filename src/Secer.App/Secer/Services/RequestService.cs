@@ -6,7 +6,10 @@ namespace Secer.Services;
 
 public class RequestService(IDistributedCache distributedCache) : IRequestService
 {
-    public async ValueTask<bool> IsValid(RequestModel request, int seconds, CancellationToken cancellationToken = default)
+    public async ValueTask<bool> IsValid(
+        RequestModel request, 
+        int seconds, 
+        CancellationToken cancellationToken = default)
     {
         var key = $"{request.MethodName}-{request.IpAddress}";
         var value = await distributedCache.GetStringAsync(key, cancellationToken);
@@ -23,14 +26,11 @@ public class RequestService(IDistributedCache distributedCache) : IRequestServic
             AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(seconds),
         };
 
-        if (value is null)
-        {
-            await distributedCache.SetStringAsync(key, JsonSerializer.Serialize(requestModel), expiration, cancellationToken);
+        await distributedCache.SetStringAsync(
+            key, 
+            JsonSerializer.Serialize(requestModel), 
+            expiration, cancellationToken);
 
-            return true;
-        }
-
-        await distributedCache.SetStringAsync(key, JsonSerializer.Serialize(requestModel), expiration, cancellationToken);
-        return false;
+        return value is null;
     }
 }
